@@ -1,0 +1,11 @@
+name = "AIProofTD"
+version = "0.1.0"
+defaultTargets = ["AIProofTD"]
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.31.0-rc1"
+
+[[lean_lib]]
+name = "Exercises"
