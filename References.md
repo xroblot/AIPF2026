@@ -6,6 +6,7 @@
 2. Créer un compte GitHub (gratuit) si nécessaire : https://github.com
 3. Ouvrir l'environnement de travail : https://codespaces.new/xroblot/AIPF2026
    puis cliquer sur **Create codespace**
+   (pour retrouver un Codespace existant : https://github.com/codespaces)
 4. Attendre le chargement complet (~5 minutes la première fois)
 5. Vérifier : ouvrir `Exercices.lean`, placer le curseur sur `#check Nat.add_comm` → une info-bulle doit apparaître
 
@@ -14,8 +15,11 @@
 ## Pendant le TD — mettre à jour les fichiers
 
 Si les fichiers ont été mis à jour depuis l'ouverture de votre Codespace,
-cliquer sur l'icône **Source Control** (fr : **Contrôle de code source**) dans la barre latérale gauche,
-puis sur le bouton **Sync Changes** (fr : **Synchroniser les modifications**).
+taper la commande suivante dans le terminal (déjà ouvert par défaut en bas de l'écran) :
+
+```
+git pull
+```
 
 ## Sites officiels
 
