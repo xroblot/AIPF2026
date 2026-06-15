@@ -1,3 +1,0 @@
-import Mathlib
-
--- Exercice 1 : ...
