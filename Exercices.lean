@@ -14,7 +14,6 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Analysis.Real.Pi.Irrational
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import Mathlib.Algebra.Module.PID
 import Mathlib.NumberTheory.FLT.Three
 
 noncomputable section
@@ -32,13 +31,33 @@ noncomputable section
 #eval 2 ^ 10          -- 1024
 
 /-
+  ## Raccourcis clavier
+
+  | Raccourci     | Symbole | Raccourci     | Symbole |
+  |---------------|---------|---------------|---------|
+  | `\to`         |   `→`   | `\iff`        |   `↔`   |
+  | `\and`        |   `∧`   | `\or`         |   `∨`   |
+  | `\not`        |   `¬`   | `\ne`         |   `≠`   |
+  | `\forall`     |   `∀`   | `\exists`     |   `∃`   |
+  | `\<`          |   `⟨`   | `\>`          |   `⟩`   |
+  | `\in`         |   `∈`   | `\notin`      |   `∉`   |
+  | `\sub`        |   `⊆`   | `\|`          |   `∣`   |
+  | `\union`      |   `∪`   | `\inter`      |   `∩`   |
+  | `\N`          |   `ℕ`   | `\Z`          |   `ℤ`   |
+  | `\R`          |   `ℝ`   | `\C`          |   `ℂ`   |
+  | `\alpha`      |   `α`   | `\beta`       |   `β`   |
+  | `\smul`       |   `•`   | `\le`         |   `≤`   |
+  | `\-1`         |   `⁻¹`  | `\comp`       |   `∘`   |
+-/
+
+/-
   # Propositions et preuves
 
   Les propositions vivent dans le type `Prop`.
   La tactique `sorry` accepte n'importe quel but sans le prouver.
 -/
 
-variable (P Q R : Prop)
+variable (P Q R S : Prop)
 
 /-
   ## Implication
@@ -54,10 +73,24 @@ example (h : P → Q) (hP : P) : Q := by
   apply h
   exact hP
 
--- La tactique `have` introduit un résultat intermédiaire nommé
+-- La tactique `have` introduit un résultat intermédiaire qu'on peut nommer
 example (h1 : P → Q) (h2 : Q → R) (hP : P) : R := by
   have hQ : Q := h1 hP
   exact h2 hQ
+
+-- La tactique `rfl` prouve une égalité réflexive
+example : P = P := by
+  rfl
+
+-- La tactique `trivial` prouve `True` (et d'autres buts évidents)
+example : True := by
+  trivial
+
+-- La tactique `exfalso` remplace le but par `False` (ex falso quodlibet)
+example : False → P := by
+  intro h
+  exfalso
+  exact h
 
 /- TODO -/
 
@@ -70,15 +103,27 @@ example : P → (P → Q) → Q := by
 example : (P → Q) → (Q → R) → P → R := by
   sorry
 
+example : (P → Q) → ((P → Q) → P) → Q := by
+  sorry
+
+example : ((Q → P) → P) → (Q → R) → (R → P) → P := by
+  sorry
+
 /- END TODO -/
 
 /-
   ## Négation, True, False
 
   `¬P` est *définie* comme `P → False`.
+  La tactique `change` remplace le but par un terme *définitionnellement* égal.
 -/
 
--- En logique classique (la logique par défaut dans Lean), ¬¬P → P est prouvable
+-- `change` permet de déplier la définition de ¬ explicitement
+example : ¬True → False := by
+  change (True → False) → False
+  intro h
+  exact h trivial
+
 -- Tactique `by_contra` : suppose ¬P et cherche une contradiction
 example : ¬¬P → P := by
   intro h
@@ -86,12 +131,25 @@ example : ¬¬P → P := by
   apply h
   exact hP
 
+-- Tactique `by_cases` : raisonnement par cas sur P ∨ ¬P (tiers exclu)
+example : ¬¬P → P := by
+  intro h
+  by_cases hP : P
+  · exact hP
+  · exfalso; exact h hP
+
 /- TODO -/
 
 example : P → ¬¬P := by
   sorry
 
 example : (P → Q) → ¬Q → ¬P := by
+  sorry
+
+example : P → ¬P → False := by
+  sorry
+
+example : (¬Q → ¬P) → P → Q := by
   sorry
 
 /- END TODO -/
@@ -112,21 +170,65 @@ example : P ∧ Q → Q ∧ P := by
 example : P ∨ Q → Q ∨ P := by
   intro h
   rcases h with hP | hQ
-  · right; exact hP
-  · left; exact hQ
+  · right
+    exact hP
+  · left
+    exact hQ
 
 -- `constructor` décompose un but `A ↔ B` en deux implications `A → B` et `B → A`
 example : P ∧ Q ↔ Q ∧ P := by
   constructor
-  · intro ⟨hP, hQ⟩; exact ⟨hQ, hP⟩
-  · intro ⟨hQ, hP⟩; exact ⟨hP, hQ⟩
+  · intro ⟨hP, hQ⟩
+    exact ⟨hQ, hP⟩
+  · intro ⟨hQ, hP⟩
+    exact ⟨hP, hQ⟩
 
 /- TODO -/
+
+example : P ∧ Q → Q := by
+  sorry
+
+example : (P → Q → R) → P ∧ Q → R := by
+  sorry
+
+example : P ∧ Q → Q ∧ R → P ∧ R := by
+  sorry
 
 example : P ∨ Q ↔ Q ∨ P := by
   sorry
 
 example : ¬(P ∨ Q) ↔ ¬P ∧ ¬Q := by
+  sorry
+
+-- Loi de De Morgan (sens ← nécessite le tiers exclu)
+example : ¬(P ∧ Q) ↔ ¬P ∨ ¬Q := by
+  sorry
+
+/- END TODO -/
+
+/-
+  ## Équivalence
+
+  `P ↔ Q` peut aussi se déconstruire avec `obtain ⟨h1, h2⟩ := h`.
+-/
+
+-- Déconstruire ↔ avec obtain
+example : (P ↔ Q) → (Q ↔ P) := by
+  intro ⟨hpq, hqp⟩
+  exact ⟨hqp, hpq⟩
+
+/- TODO -/
+
+example : (P ↔ Q) → (Q ↔ R) → (P ↔ R) := by
+  sorry
+
+example : P ↔ P ∧ True := by
+  sorry
+
+example : (P ↔ Q) → (R ↔ S) → (P ∧ R ↔ Q ∧ S) := by
+  sorry
+
+example : ¬(P ↔ ¬P) := by
   sorry
 
 /- END TODO -/
@@ -167,17 +269,36 @@ example : (∃ x, f x ∨ g x) ↔ (∃ x, f x) ∨ (∃ x, g x) := by
 example (h : ¬ ∀ x, f x) : ∃ x, ¬ f x := by
   sorry
 
+example : (∀ x, f x) ↔ ¬ (∃ x, ¬ f x) := by
+  sorry
+
+example : (∃ x, f x) ↔ ¬ (∀ x, ¬ f x) := by
+  sorry
+
 /- END TODO -/
 
 /-
   # Ensembles et fonctions
 
-  `f '' s`   = image de `s` par `f`  = { f x | x ∈ s }
-  `f ⁻¹' t`  = préimage de `t` par `f` = { x | f x ∈ t }
+  `s ⊆ t`    : s est sous-ensemble de t  — prouver avec `intro x hx`
+  `f '' s`   = image de `s` par `f`      = { f x | x ∈ s }
+  `f ⁻¹' t`  = préimage de `t` par `f`  = { x | f x ∈ t }
 
   Tactiques utiles : `ext`, `rintro`, `simp`
   Pour `f '' (s ∪ t)` : penser à `rintro ⟨x, hx | hx, rfl⟩`
 -/
+
+-- Prouver `s ⊆ t` : introduire un élément avec `intro x hx`
+example (s t u : Set α) (hst : s ⊆ t) (htu : t ⊆ u) : s ⊆ u := by
+  intro x hx
+  exact htu (hst hx)
+
+-- `ext x` réduit une égalité d'ensembles `s = t` à `x ∈ s ↔ x ∈ t`
+example (s : Set α) : s ∩ s = s := by
+  ext x
+  constructor
+  · rintro ⟨hx, _⟩; exact hx
+  · intro hx; exact ⟨hx, hx⟩
 
 #print Function.Injective
 
@@ -192,7 +313,7 @@ example {β γ : Type*} {f : α → β} {g : β → γ}
 
 -- L'image d'une intersection est contenue dans l'intersection des images
 -- Dans un pattern `⟨x, hx, rfl⟩`, le `rfl` signifie qu'une des hypothèses est de la forme
--- `y = f x` : Lean substitue immédiatement y par f x dans tout le but
+-- `y = f x` : Lean substitue immédiatement y par f x partout
 example {β : Type*} (f : α → β) (s t : Set α) :
     f '' (s ∩ t) ⊆ f '' s ∩ f '' t := by
   intro y hy
@@ -201,11 +322,17 @@ example {β : Type*} (f : α → β) (s t : Set α) :
 
 /- TODO -/
 
--- `ext` réduit une égalité d'ensembles à une équivalence membre à membre :
--- après `ext x`, le but devient `x ∈ s ↔ x ∈ t`.
+-- s ⊆ s ∪ t
+example (s t : Set α) : s ⊆ s ∪ t := by
+  sorry
+
 -- s ∩ t = t ∩ s
--- Indice : après `ext x`, utiliser `constructor` et `rintro`
+-- Indice : `ext x`, puis `constructor` et `rintro ⟨h1, h2⟩`
 example (s t : Set α) : s ∩ t = t ∩ s := by
+  sorry
+
+-- Distributivité de ∩ sur ∪
+example (s t u : Set α) : s ∩ (t ∪ u) = (s ∩ t) ∪ (s ∩ u) := by
   sorry
 
 -- L'image d'une union est l'union des images
@@ -215,8 +342,13 @@ example {β : Type*} (f : α → β) (s t : Set α) :
     f '' (s ∪ t) = f '' s ∪ f '' t := by
   sorry
 
+-- La préimage respecte l'intersection : f ⁻¹' (s ∩ t) = f ⁻¹' s ∩ f ⁻¹' t
+-- Mode facile : `ext x` puis `simp`
+example {β : Type*} (f : α → β) (s t : Set β) :
+    f ⁻¹' (s ∩ t) = f ⁻¹' s ∩ f ⁻¹' t := by
+  sorry
+
 -- La préimage commute avec le complémentaire
--- Mode facile : ext x puis simp, sinon à la main
 example {β : Type*} (f : α → β) (t : Set β) :
     f ⁻¹' tᶜ = (f ⁻¹' t)ᶜ := by
   sorry
@@ -225,68 +357,6 @@ example {β : Type*} (f : α → β) (t : Set β) :
 -- Indice pour ← : `rintro ⟨⟨x, hxs, rfl⟩, ⟨x', hxt, hxx'⟩⟩`, puis `hf` et `subst`
 example {β : Type*} {f : α → β} (hf : Function.Injective f) (s t : Set α) :
     f '' (s ∩ t) = f '' s ∩ f '' t := by
-  sorry
-
-/- END TODO -/
-
-/-
-  # Arithmétique et divisibilité
-
-  `a ∣ b` signifie "a divise b". Utiliser `\|` pour écrire `∣`.
--/
-
--- Pièges liés au type
-example : (1 : ℕ) - 3 = 0 := by norm_num      -- pas -2 !
-example : (2 : ℝ) / 0 = 0 := by norm_num      -- convention Lean
-example (a b : ℕ) (h : b ≤ a) : a - b + b = a := Nat.sub_add_cancel h
-
--- n(n+1) est toujours pair : preuve par cas pair/impair
-example (n : ℤ) : 2 ∣ n * (n + 1) := by
-  rcases Int.even_or_odd n with ⟨k, hk⟩ | ⟨k, hk⟩
-  · exact ⟨k * (n + 1), by rw [hk]; ring⟩
-  · exact ⟨n * (k + 1), by rw [hk]; ring⟩
-
-/- TODO -/
-
--- Si 2 ∣ a et 2 ∣ b, alors 4 ∣ a * b
-example (a b : ℤ) (ha : 2 ∣ a) (hb : 2 ∣ b) : 4 ∣ a * b := by
-  sorry
-
--- Si a ∣ b et a ∣ c, montrer a ∣ 3 * b ^ 2 - 5 * c
-example (a b c : ℤ) (h1 : a ∣ b) (h2 : a ∣ c) : a ∣ 3 * b ^ 2 - 5 * c := by
-  sorry
-
--- Le pgcd divise la somme
-example (a b : ℕ) : Nat.gcd a b ∣ a + b := by
-  sorry
-
--- Identité de Bézout (chercher le bon lemme avec `exact?`)
-example (a b : ℤ) : ∃ u v : ℤ, u * a + v * b = Int.gcd a b := by
-  sorry
-
-/- END TODO -/
-
-/-
-  # Nombres premiers
--/
-
-example : Nat.Prime 17 := by norm_num
-
-#check Nat.Prime.dvd_mul
-
-example (p a b : ℕ) (hp : Nat.Prime p) (h : p ∣ a * b) : p ∣ a ∨ p ∣ b :=
-  hp.dvd_mul.mp h
-
-/- TODO -/
-
--- Si p premier et p ∣ aⁿ, alors p ∣ a
-example (p a n : ℕ) (hp : Nat.Prime p) (h : p ∣ a ^ n) : p ∣ a := by
-  sorry
-
--- Si p premier et p ∣ a * b * c, que peut-on conclure ?
--- (Ne pas chercher un lemme : raisonner à partir de `Nat.Prime.dvd_mul`)
-example (p a b c : ℕ) (hp : Nat.Prime p) (h : p ∣ a * b * c) :
-    p ∣ a ∨ p ∣ b ∨ p ∣ c := by
   sorry
 
 /- END TODO -/
@@ -301,15 +371,29 @@ example (p a b c : ℕ) (hp : Nat.Prime p) (h : p ∣ a * b * c) :
     Monoid → Group → CommGroup
     Ring → CommRing → Field
     AddCommGroup + scalaires → Module (généralise espace vectoriel)
+-/
 
-  Lean sait que les types familiers sont munis de ces structures :
+/-
+  **Synthèse d'instances**
+
+  Lean maintient une base de données d'*instances* de classes de types.
+  Quand on veut appliquer un lemme dont la signature contient `[CommRing R]`,
+  Lean cherche automatiquement une instance de `CommRing R` dans cette base
+  pour le type `R` en question — c'est la *synthèse d'instances*.
+  La commande `inferInstance` déclenche explicitement cette recherche
+  (utile pour vérifier qu'une instance existe ou la fournir manuellement).
 -/
 
 example : CommRing ℤ := inferInstance
 example : Field ℝ    := inferInstance
 example : Field ℂ    := inferInstance
 
--- Pour p premier, ℤ/pℤ est un corps
+/-
+  **Ce qui peut être une instance** : seules les *classes de types* peuvent figurer dans cette base.
+  Une proposition ordinaire (comme `Nat.Prime 5 : Prop`) ne peut pas y apparaître directement.
+  C'est pourquoi on utilise `Fact P` : c'est une classe de types avec un seul champ `out : P`,
+  qui permet d'enregistrer une proposition dans la base d'instances.
+-/
 example : Field (ZMod 5) := by
   have : Fact (Nat.Prime 5) := ⟨by norm_num⟩
   exact inferInstance
@@ -323,7 +407,6 @@ example : Field (ZMod 5) := by
 
 #check MonoidHom.map_one
 #check MonoidHom.map_mul
-#check MonoidHom.map_inv
 
 -- f(1_G) = 1_H
 example {G H : Type*} [Group G] [Group H] (f : G →* H) : f 1 = 1 :=
@@ -338,76 +421,80 @@ example {G H : Type*} [Group G] [Group H] (f : G →* H) (a : G) :
   apply eq_inv_of_mul_eq_one_left
   rw [← f.map_mul, inv_mul_cancel, f.map_one]
 
+-- La tactique `group` prouve les identités valables dans *tout* groupe (analogue de `ring`)
+example {G : Type*} [Group G] (x y z : G) :
+    x * (y * z) * (x * z)⁻¹ * (x * y * x⁻¹)⁻¹ = 1 := by group
+
+-- La tactique `abel` fait de même dans un groupe abélien (noté additivement)
+example {G : Type*} [AddCommGroup G] (x y z : G) : z + x + (y - z - x) = y := by abel
+
 /- TODO -/
 
--- Si f est injectif, alors : f(a) = 1 ⟹ a = 1
+-- Si f est injectif, alors : f(a) = 1 → a = 1
 example {G H : Type*} [Group G] [Group H] (f : G →* H)
     (hf : Function.Injective f) (a : G) (h : f a = 1) : a = 1 := by
   sorry
 
--- Dans un monoïde commutatif, (a * b)^n = a^n * b^n
--- Prouver par récurrence sur n.
+-- Dans un monoïde commutatif, (a * b) ^ n = a ^ n * b ^ n
 -- Indice : `pow_succ x n : x ^ (n + 1) = x ^ n * x` et `mul_mul_mul_comm`
+--
+-- La tactique `simp` simplifie le but en appliquant une base de lemmes automatiquement.
+-- `simp?` fait la même chose mais affiche les lemmes utilisés — utile pour comprendre
+-- ou pour remplacer `simp` par un appel plus explicite.
+--
+-- Squelette de la récurrence :
+--   induction n with
+--   | zero   => simp        -- cas de base : (a*b)^0 = 1 = 1*1
+--   | succ n ih => ...
 example {M : Type*} [CommMonoid M] (a b : M) (n : ℕ) :
     (a * b) ^ n = a ^ n * b ^ n := by
   sorry
 
--- f envoie les conjugués sur les conjugués : f(g * a * g⁻¹) = f(g) * f(a) * f(g)⁻¹
-example {G H : Type*} [Group G] [Group H] (f : G →* H) (a g : G) :
-    f (g * a * g⁻¹) = f g * f a * (f g)⁻¹ := by
+-- Dans un groupe où tout élément vérifie a^2 = 1, la multiplication est commutative.
+-- Démarche : montrer d'abord que tout élément est son propre inverse, i.e. ∀ x, x⁻¹ = x.
+--   Pour cela : x * x = 1 (car x^2 = 1), puis utiliser `eq_inv_of_mul_eq_one_left`.
+--   Ensuite : a * b = (a * b)⁻¹ = b⁻¹ * a⁻¹ = b * a.
+--   (`mul_inv_rev` donne (a * b)⁻¹ = b⁻¹ * a⁻¹)
+example {G : Type*} [Group G] (h : ∀ a : G, a ^ 2 = 1) (a b : G) : a * b = b * a := by
   sorry
+
+-- La préimage d'un sous-groupe par un morphisme préserve l'inclusion
+-- `S.comap φ` est la préimage de S par φ (un sous-groupe de G)
+-- Indice secondaire : `Subgroup.mem_comap` (a ∈ S.comap φ ↔ φ a ∈ S)
+example {G H : Type*} [Group G] [Group H] (φ : G →* H) (S T : Subgroup H)
+    (hST : S ≤ T) : S.comap φ ≤ T.comap φ := by
+  sorry
+
+-- Construction du sous-groupe conjugué xHx⁻¹
+-- Il faut remplir les trois preuves de stabilité (neutre, inverse, produit).
+-- Indices secondaires : `H.one_mem`, `H.inv_mem`, `H.mul_mem` (stabilité de H lui-même)
+def conjugate {G : Type*} [Group G] (x : G) (H : Subgroup G) : Subgroup G where
+  carrier := {a : G | ∃ h, h ∈ H ∧ a = x * h * x⁻¹}
+  one_mem' := by sorry
+  inv_mem' := by sorry
+  mul_mem' := by sorry
 
 /- END TODO -/
 
 /-
-  ## Anneaux
+  ## Anneaux et corps
 
-  Un morphisme d'anneaux `f : R →+* S` envoie 1 sur 1 et préserve +, *.
-  L'exemple fondamental : la réduction modulo n, `Int.castRingHom (ZMod n)`.
+  La tactique `ring` prouve les identités algébriques dans un `CommRing`.
+  Un morphisme d'anneaux `f : R →+* S` préserve +, * et 1 (`map_add`, `map_mul`, `map_pow`).
+  Un corps (`Field`) est un `CommRing` où tout non-nul est inversible ; convention : `0⁻¹ = 0`.
 -/
 
-#check Int.castRingHom (ZMod 5)
-#check RingHom.map_mul
-#check RingHom.map_add
-#check RingHom.map_pow
+-- La commutativité est une hypothèse, pas un théorème : `Ring` ≠ `CommRing`
+example {R : Type*} [CommRing R] (a b : R) : a * b = b * a := mul_comm a b
 
--- Un morphisme d'anneaux préserve à la fois + et *
+-- `ring` prouve les identités polynomiales dans un `CommRing`
+example {R : Type*} [CommRing R] (a b : R) :
+    (a + b) ^ 2 = a ^ 2 + 2 * a * b + b ^ 2 := by ring
+
+-- Un morphisme d'anneaux préserve les puissances et les sommes
 example {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S) (a b : R) :
     f (a ^ 2 + b ^ 2) = f a ^ 2 + f b ^ 2 := by
-  rw [map_add, map_pow, map_pow] -- simp fonctionne aussi !
-
-/- TODO -/
-
--- f préserve les unités
-example {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S) (a : R) (h : IsUnit a) :
-    IsUnit (f a) := by
-  sorry
-
--- Dans ℤ/5ℤ : 2 * 3 = 1
-example : (2 : ZMod 5) * 3 = 1 := by
-  sorry
-
--- Petit théorème de Fermat
-example (a : ZMod 5) : a ^ 5 = a := by
-  haveI : Fact (Nat.Prime 5) := ⟨by norm_num⟩
-  exact ZMod.pow_card a
-
--- `decide` vérifie les propositions décidables par calcul dans le noyau de Lean (lent).
--- `native_decide` compile en code natif et utilise GMP pour l'arithmétique : bien plus rapide.
--- Calculer 2 ^ 100 mod 7
-example : (2 : ZMod 7) ^ 100 = 2 := by
-  native_decide
-
-/- END TODO -/
-
-/-
-  ## Corps
-
-  Un corps est un anneau commutatif où tout élément non nul est inversible.
-  La convention Lean : `0⁻¹ = 0`.
-
-  Le lemme central : `mul_eq_zero : a * b = 0 ↔ a = 0 ∨ b = 0`
--/
+  rw [map_add, map_pow, map_pow]
 
 -- Dans un corps, produit nul implique facteur nul
 example {K : Type*} [Field K] (a b : K) (h : a * b = 0) : a = 0 ∨ b = 0 :=
@@ -415,59 +502,34 @@ example {K : Type*} [Field K] (a b : K) (h : a * b = 0) : a = 0 ∨ b = 0 :=
 
 /- TODO -/
 
+-- Factorisation de a³ - b³ (utiliser `ring`)
+-- Le même énoncé est faux dans un `Ring` non commutatif : `ring` nécessite `CommRing`
+example {R : Type*} [CommRing R] (a b : R) :
+    a ^ 3 - b ^ 3 = (a - b) * (a ^ 2 + a * b + b ^ 2) := by
+  sorry
+
+-- Les unités de ℤ sont exactement ±1
+#check @Units.mul_inv     -- x * x⁻¹ = 1 dans ℤˣ
+#check isUnit_of_dvd_one  -- a ∣ 1 → IsUnit a
+#check Int.isUnit_iff     -- IsUnit n ↔ n = 1 ∨ n = -1
+example (x : ℤˣ) : x = 1 ∨ x = -1 := by
+  sorry
+
+-- f préserve les unités
+-- Indice : `IsUnit a` se déconstruit en une unité (`obtain ⟨u, rfl⟩ := h`) ;
+--   `Units.map f.toMonoidHom` envoie une unité de R sur une unité de S
+example {R S : Type*} [Ring R] [Ring S] (f : R →+* S) (a : R) (h : IsUnit a) :
+    IsUnit (f a) := by
+  sorry
+
 -- L'inverse de l'inverse est l'élément lui-même (pour a ≠ 0)
--- Indice : `inv_inv`
+-- Indice : `inv_ne_zero`, `mul_inv_cancel₀`, `inv_mul_cancel₀`
 example {K : Type*} [Field K] (a : K) (ha : a ≠ 0) : (a⁻¹)⁻¹ = a := by
   sorry
 
--- Dans ℤ/7ℤ, trouver l'inverse de 3
--- (indice : decide)
-example : (3 : ZMod 7)⁻¹ = 5 := by
-  sorry
-
--- Dans un corps, simplification : si a ≠ 0 et a * b = a * c, alors b = c
--- Indice : `mul_left_cancel₀`
+-- Simplification à gauche dans un corps : a ≠ 0, a * b = a * c → b = c
+-- Indice : multiplier par a⁻¹ à gauche, puis `mul_assoc` et `inv_mul_cancel₀`
 example {K : Type*} [Field K] (a b c : K) (ha : a ≠ 0) (h : a * b = a * c) : b = c := by
-  sorry
-
-/- END TODO -/
-
-/-
-  ## Modules
-
-  Un R-module généralise la notion d'espace vectoriel :
-  l'anneau de scalaires R remplace le corps.
-
-  Exemples :
-  - Tout groupe abélien est un ℤ-module
-  - Un K-espace vectoriel est un K-module
-  - ℤ/nℤ est un ℤ-module
-
-  L'action scalaire s'écrit `r • v`.
--/
-
-#check smul_add   -- r • (a + b) = r • a + r • b
-#check add_smul   -- (r + s) • a = r • a + s • a
-#check mul_smul   -- (r * s) • a = r • (s • a)
-#check one_smul   -- (1 : R) • a = a
-#check zero_smul  -- (0 : R) • a = 0
-#check smul_zero  -- r • (0 : M) = 0
-
-/- TODO -/
-
--- (-1) • v = -v
--- Indice : `neg_one_smul`
-example {V : Type*} [AddCommGroup V] [Module ℝ V] (v : V) : (-1 : ℝ) • v = -v := by
-  sorry
-
--- Un sous-module est stable par addition
-example {V : Type*} [AddCommGroup V] [Module ℝ V] (S : Submodule ℝ V)
-    (u v : V) (hu : u ∈ S) (hv : v ∈ S) : u + v ∈ S := by
-  sorry
-
--- Un sous-module est stable par action scalaire
-example {V : Type*} [AddCommGroup V] [Module ℝ V] (S : Submodule ℝ V)
-    (r : ℝ) (v : V) (hv : v ∈ S) : r • v ∈ S := by
   sorry
 
 /- END TODO -/
@@ -499,6 +561,11 @@ example : Continuous (fun x : ℝ => Real.sin (Real.exp x)) := by fun_prop
 example {f g : ℝ → ℝ} (hf : Continuous f) (hg : Continuous g) :
     Continuous (g ∘ f) := hg.comp hf
 
+-- `Continuous` coïncide avec la définition classique ε-δ (dans un espace métrique)
+example {f : ℝ → ℝ} : Continuous f ↔
+    ∀ x, ∀ ε > 0, ∃ δ > 0, ∀ x', dist x' x < δ → dist (f x') (f x) < ε :=
+  Metric.continuous_iff
+
 /- TODO -/
 
 -- x ↦ cos x + x ^ 2 est continue
@@ -529,8 +596,15 @@ example {f g : ℝ → ℝ} (hf : Continuous f) (hg : Continuous g) :
 example : deriv Real.sin = Real.cos := by ext x; simp [Real.deriv_sin]
 example : deriv Real.exp = Real.exp := by ext x; simp [Real.deriv_exp]
 
+-- `simp` sait aussi calculer une dérivée en un point
+example : deriv (fun x : ℝ => x ^ 5) 6 = 5 * 6 ^ 4 := by simp
+
 -- fun_prop vérifie la différentiabilité
 example : Differentiable ℝ (fun x : ℝ => Real.cos (Real.sin x) * Real.exp x) := by fun_prop
+
+-- Deux grands théorèmes du calcul différentiel
+#check exists_deriv_eq_zero        -- Théorème de Rolle
+#check exists_hasDerivAt_eq_slope  -- Théorème des accroissements finis
 
 /- TODO -/
 
@@ -578,6 +652,9 @@ example {f : ℝ → ℝ} (hf : Continuous f) {s : Set ℝ} (hs : IsCompact s) :
 
 /- END TODO -/
 
+-- Théorème des bornes : une fonction continue sur un compact non vide atteint son minimum
+#check IsCompact.exists_isMinOn
+
 -- Heine-Cantor : continue sur un compact → uniformément continue
 #check IsCompact.uniformContinuousOn_of_continuous
 
@@ -607,13 +684,19 @@ example {f : ℝ → ℝ} (hf : Continuous f) {s : Set ℝ} (hs : IsCompact s) :
     Recherche en langage naturel. Exemple : "prime divides product"
 -/
 
--- Exercice : trouver et utiliser le bon lemme dans chaque cas
--- (utiliser `exact?` ou les moteurs de recherche)
+-- Exercice : trouver et utiliser le bon lemme dans chaque cas.
+-- Contrairement au reste du TD — où les indices ne donnent jamais le lemme final —
+-- ici le but EST de dénicher le lemme qui clôt le but en une ligne.
+-- (utiliser `exact?` ou les moteurs de recherche ci-dessus)
 
 /- TODO -/
 
 -- Si a ∣ b et b ∣ c, alors a ∣ c
 example (a b c : ℤ) (h1 : a ∣ b) (h2 : b ∣ c) : a ∣ c := by
+  sorry
+
+-- La somme de deux nombres pairs est paire
+example (m n : ℤ) (hm : 2 ∣ m) (hn : 2 ∣ n) : 2 ∣ m + n := by
   sorry
 
 -- pgcd(a, b) * ppcm(a, b) = a * b
@@ -622,10 +705,6 @@ example (a b : ℕ) : Nat.gcd a b * Nat.lcm a b = a * b := by
 
 -- π est irrationnel
 example : Irrational Real.pi := by
-  sorry
-
--- La somme de deux nombres pairs est paire
-example (m n : ℤ) (hm : 2 ∣ m) (hn : 2 ∣ n) : 2 ∣ m + n := by
   sorry
 
 -- Le dernier théorème de Fermat pour n = 3
@@ -654,18 +733,26 @@ def rZ : ℕ × ℕ → ℕ × ℕ → Prop := fun (a, b) (c, d) ↦ a + d = c +
 theorem rZ_iff (a b c d : ℕ) : rZ (a, b) (c, d) ↔ a + d = c + b := Iff.rfl
 theorem rZ_iff' (x y : ℕ × ℕ) : rZ x y ↔ x.1 + y.2 = y.1 + x.2 := Iff.rfl
 
+/-
+  Les trois preuves ci-dessous ont la même structure : décomposer les paires
+  (`rintro ⟨a, b⟩ ...` ou `intro`), déplier `rZ` en une égalité arithmétique
+  (via `rZ_iff` / `rZ_iff'`), puis conclure par arithmétique linéaire avec `lia`.
+-/
+
 /- TODO -/
 
 -- rZ est réflexive
+-- Indice : `rintro ⟨a, b⟩`, puis `simp [rZ_iff]`
 theorem rZ_reflexive : ∀ x : ℕ × ℕ, rZ x x := by
   sorry
 
 -- rZ est symétrique
+-- (x et y sont implicites : les introduire avec `intro x y h`)
 theorem rZ_symmetric : ∀ {x y : ℕ × ℕ}, rZ x y → rZ y x := by
   sorry
 
 -- rZ est transitive
--- Indice : `lia`
+-- Indice : `intro x y z h1 h2`, puis `simp only [rZ_iff'] at *` et `lia`
 theorem rZ_transitive : ∀ {x y z : ℕ × ℕ}, rZ x y → rZ y z → rZ x z := by
   sorry
 
@@ -701,9 +788,19 @@ instance : Neg ZZ := ⟨neg⟩
 -- Addition : (a, b) + (c, d) = (a+c, b+d)
 def add_aux (x y : ℕ × ℕ) : ZZ := ⟦(x.1 + y.1, x.2 + y.2)⟧
 
+/-
+  Pour définir une opération sur un quotient, on la définit d'abord sur les
+  représentants (`add_aux`), puis on prouve qu'elle ne dépend pas du choix des
+  représentants (`add_aux_sound`) : c'est ce qui permet à `Quotient.lift₂` de la
+  faire « descendre » au quotient. Pour prouver une égalité *entre classes*, on
+  utilise `Quotient.sound` (deux représentants équivalents ont la même classe).
+-/
+
 /- TODO -/
 
 -- Montrer que add_aux est compatible avec la relation (nécessaire pour Quotient.lift₂)
+-- Indice : décomposer les quatre paires, déplier les hypothèses avec
+--   `simp only [add_aux, rZ_equiv_def] at *`, puis `apply Quotient.sound` et `lia`
 theorem add_aux_sound (x₁ y₁ x₂ y₂ : ℕ × ℕ) (h₁ : x₁ ≈ x₂) (h₂ : y₁ ≈ y₂) :
     add_aux x₁ y₁ = add_aux x₂ y₂ := by
   sorry
@@ -717,7 +814,9 @@ instance : Add ZZ := ⟨add⟩
     (⟦(a, b)⟧ + ⟦(c, d)⟧ : ZZ) = ⟦(a + c, b + d)⟧ := rfl
 
 -- Montrer que l'addition est commutative
--- Indice : `Quotient.inductionOn₂`
+-- `Quotient.inductionOn₂` ramène un but portant sur deux classes à un but sur
+-- leurs représentants : `refine Quotient.inductionOn₂ x y ?_`, puis `rintro ⟨a, b⟩ ⟨c, d⟩`.
+-- Conclure avec `simp only [add_def]`, `apply Quotient.sound` et `lia`.
 theorem add_comm' (x y : ZZ) : x + y = y + x := by
   sorry
 
@@ -739,6 +838,13 @@ end ZZ
 
   Source : *Mathematics in Lean*, J. Avigad et al., chapitre 4, section 3.
   https://leanprover-community.github.io/mathematics_in_lean/
+
+  **Idée de la preuve.** On partitionne `α` en deux : l'ensemble `sbSet` des
+  éléments « venant du côté f » (définis par itération de `g ∘ f` à partir des
+  points hors de l'image de `g`), et son complémentaire. On construit `sbFun` qui
+  applique `f` sur `sbSet` et l'inverse `g⁻¹` ailleurs. Il reste à montrer que
+  `sbFun` est injective puis surjective (donc bijective) — c'est l'objet des trois
+  lemmes ci-dessous, assemblés à la fin.
 -/
 
 section SchroederBernstein
@@ -747,13 +853,21 @@ open Set Function Classical
 
 variable {α β : Type*} [Nonempty β] (f : α → β) (g : β → α)
 
-private def sbAux : ℕ → Set α
+-- `sbAux n` est le n-ième niveau de la construction :
+--   sbAux 0     = α \ g(β)          (éléments de α qui ne sont pas dans l'image de g)
+--   sbAux (n+1) = g(f(sbAux n))     (propagation par g ∘ f)
+def sbAux : ℕ → Set α
   | 0     => univ \ g '' univ
   | n + 1 => g '' (f '' sbAux n)
 
-private def sbSet := ⋃ n, sbAux f g n
+-- `sbSet` = ⋃ sbAux n  (la réunion de tous les niveaux)
+-- Intuition : ce sont les éléments de α qui "viennent du côté f"
+def sbSet := ⋃ n, sbAux f g n
 
-private def sbFun (x : α) : β :=
+-- `sbFun` est la bijection cherchée :
+--   sur sbSet, on utilise f  (côté "f")
+--   ailleurs,  on utilise g⁻¹ (g est injective, donc inversible sur son image)
+def sbFun (x : α) : β :=
   if x ∈ sbSet f g then f x else invFun g x
 
 /- TODO -/
@@ -761,21 +875,23 @@ private def sbFun (x : α) : β :=
 -- Si x ∉ sbSet, alors x est dans l'image de g, donc invFun g est bien une inverse droite
 -- Indice : montrer d'abord `x ∈ g '' univ` par contraposée (cas n=0 de sbAux),
 --          puis utiliser `invFun_eq`
-private theorem sb_right_inv {x : α} (hx : x ∉ sbSet f g) : g (invFun g x) = x := by
+theorem sb_right_inv {x : α} (hx : x ∉ sbSet f g) : g (invFun g x) = x := by
   sorry
 
 -- sbFun est injective si f l'est
 -- Stratégie : `set A := sbSet f g`, `set h := sbFun f g`, `by_cases` sur `x₁ ∈ A ∨ x₂ ∈ A`,
 --             `wlog` pour supposer x₁ ∈ A, puis `push Not` pour le cas ¬(x₁∈A ∨ x₂∈A)
-private theorem sb_injective (hf : Injective f) : Injective (sbFun f g) := by
+theorem sb_injective (hf : Injective f) : Injective (sbFun f g) := by
   sorry
 
 -- sbFun est surjective si g l'est
 -- Stratégie : `by_cases` sur `g y ∈ A`, puis `leftInverse_invFun`
-private theorem sb_surjective (hg : Injective g) : Surjective (sbFun f g) := by
+theorem sb_surjective (hg : Injective g) : Surjective (sbFun f g) := by
   sorry
 
 -- Théorème principal : assembler les trois lemmes ci-dessus
+-- Indice : `Bijective` se déconstruit en `Injective ∧ Surjective` ; fournir le témoin
+--   `sbFun f g` puis les deux lemmes, via `exact ⟨_, _, _⟩`
 theorem schroeder_bernstein {f : α → β} {g : β → α}
     (hf : Injective f) (hg : Injective g) : ∃ h : α → β, Bijective h := by
   sorry
