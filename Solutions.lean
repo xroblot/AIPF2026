@@ -1,10 +1,10 @@
 /-
-  # TD Lean/Mathlib — AI, Proof and Formalization Days
-  ENS de Lyon, 17 juin 2026
+  # Lean/Mathlib tutorial — AI, Proof and Formalization Days
+  ENS de Lyon, June 17, 2026
 
   SOLUTIONS
-  (Ce fichier est le miroir de `Exercices.lean` : une solution par exercice `sorry`,
-   dans le même ordre et les mêmes sections.)
+  (This file mirrors `Exercices.lean`: one solution per `sorry` exercise,
+   in the same order and the same sections.)
 -/
 import Mathlib.Tactic
 import Mathlib.NumberTheory.Real.Irrational
@@ -16,7 +16,7 @@ import Mathlib.NumberTheory.FLT.Three
 
 noncomputable section
 
-variable (P Q R S : Prop)
+variable (P Q R : Prop)
 
 /- ## Implication -/
 
@@ -24,23 +24,11 @@ example : P → Q → P := by
   intro hP _
   exact hP
 
-example : P → (P → Q) → Q := by
-  intro hP h
-  exact h hP
-
 example : (P → Q) → (Q → R) → P → R := by
   intro h1 h2 hP
   exact h2 (h1 hP)
 
-example : (P → Q) → ((P → Q) → P) → Q := by
-  intro h1 h2
-  exact h1 (h2 h1)
-
-example : ((Q → P) → P) → (Q → R) → (R → P) → P := by
-  intro h1 h2 h3
-  exact h1 (fun q => h3 (h2 q))
-
-/- ## Négation, True, False -/
+/- ## Negation, True, False -/
 
 example : P → ¬¬P := by
   intro hP h
@@ -50,28 +38,11 @@ example : (P → Q) → ¬Q → ¬P := by
   intro h hnQ hP
   exact hnQ (h hP)
 
-example : P → ¬P → False := by
-  intro hP hnP
-  exact hnP hP
-
-example : (¬Q → ¬P) → P → Q := by
-  intro h hP
-  by_contra hQ
-  exact h hQ hP
-
-/- ## Conjonction et disjonction -/
-
-example : P ∧ Q → Q := by
-  intro h
-  exact h.2
+/- ## Conjunction and disjunction -/
 
 example : (P → Q → R) → P ∧ Q → R := by
   intro h ⟨hP, hQ⟩
   exact h hP hQ
-
-example : P ∧ Q → Q ∧ R → P ∧ R := by
-  intro ⟨hP, _⟩ ⟨_, hR⟩
-  exact ⟨hP, hR⟩
 
 example : P ∨ Q ↔ Q ∨ P := by
   constructor
@@ -85,54 +56,26 @@ example : P ∨ Q ↔ Q ∨ P := by
 example : ¬(P ∨ Q) ↔ ¬P ∧ ¬Q := by
   constructor
   · intro h
-    exact ⟨fun hP => h (Or.inl hP), fun hQ => h (Or.inr hQ)⟩
+    exact ⟨fun hP ↦ h (Or.inl hP), fun hQ ↦ h (Or.inr hQ)⟩
   · intro ⟨hnP, hnQ⟩ hPQ
     rcases hPQ with hP | hQ
     · exact hnP hP
     · exact hnQ hQ
 
--- De Morgan (sens ← via le tiers exclu, avec `by_cases`)
-example : ¬(P ∧ Q) ↔ ¬P ∨ ¬Q := by
-  constructor
-  · intro h
-    by_cases hP : P
-    · right; intro hQ; exact h ⟨hP, hQ⟩
-    · left; exact hP
-  · rintro (hnP | hnQ) ⟨hP, hQ⟩
-    · exact hnP hP
-    · exact hnQ hQ
-
-/- ## Équivalence -/
-
-example : (P ↔ Q) → (Q ↔ R) → (P ↔ R) := by
-  intro h1 h2
-  exact h1.trans h2
-
-example : P ↔ P ∧ True := by
-  constructor
-  · intro hP; exact ⟨hP, trivial⟩
-  · intro ⟨hP, _⟩; exact hP
-
-example : (P ↔ Q) → (R ↔ S) → (P ∧ R ↔ Q ∧ S) := by
-  intro hpq hrs
-  rw [hpq, hrs]
+/- ## Equivalence -/
 
 example : ¬(P ↔ ¬P) := by
   intro h
-  have hnP : ¬P := fun hP => h.mp hP hP
-  exact hnP (h.mpr hnP)
+  have hnP : ¬P := fun hP ↦ Iff.mp h hP hP
+  exact hnP (Iff.mpr h hnP)
 
-/- # Quantificateurs -/
+/- # Quantifiers -/
 
 variable (α : Type*) (f g : α → Prop)
 
-example : (∀ x, f x ∧ g x) → ∀ x, f x := by
-  intro h x
-  exact (h x).1
-
 example : (∀ x, f x ∧ g x) ↔ (∀ x, f x) ∧ (∀ x, g x) := by
   constructor
-  · intro h; exact ⟨fun x => (h x).1, fun x => (h x).2⟩
+  · intro h; exact ⟨fun x ↦ And.left (h x), fun x ↦ And.right (h x)⟩
   · intro ⟨h1, h2⟩ x; exact ⟨h1 x, h2 x⟩
 
 example : (∃ x, f x ∨ g x) ↔ (∃ x, f x) ∨ (∃ x, g x) := by
@@ -149,21 +92,7 @@ example (h : ¬ ∀ x, f x) : ∃ x, ¬ f x := by
   push Not at h'
   exact h h'
 
-example : (∀ x, f x) ↔ ¬ (∃ x, ¬ f x) := by
-  constructor
-  · rintro h ⟨x, hx⟩; exact hx (h x)
-  · intro h x; by_contra hx; exact h ⟨x, hx⟩
-
-example : (∃ x, f x) ↔ ¬ (∀ x, ¬ f x) := by
-  constructor
-  · rintro ⟨x, hx⟩ h; exact h x hx
-  · intro h; by_contra h'; push Not at h'; exact h h'
-
-/- # Ensembles et fonctions -/
-
-example (s t : Set α) : s ⊆ s ∪ t := by
-  intro x hx
-  exact Or.inl hx
+/- # Sets and functions -/
 
 example (s t : Set α) : s ∩ t = t ∩ s := by
   ext x
@@ -181,17 +110,6 @@ example (s t u : Set α) : s ∩ (t ∪ u) = (s ∩ t) ∪ (s ∩ u) := by
     · exact ⟨hs, Or.inl ht⟩
     · exact ⟨hs, Or.inr hu⟩
 
-example {β : Type*} (f : α → β) (s t : Set α) :
-    f '' (s ∪ t) = f '' s ∪ f '' t := by
-  ext y
-  constructor
-  · rintro ⟨x, hx | hx, rfl⟩
-    · exact Or.inl ⟨x, hx, rfl⟩
-    · exact Or.inr ⟨x, hx, rfl⟩
-  · rintro (⟨x, hx, rfl⟩ | ⟨x, hx, rfl⟩)
-    · exact ⟨x, Or.inl hx, rfl⟩
-    · exact ⟨x, Or.inr hx, rfl⟩
-
 example {β : Type*} (f : α → β) (s t : Set β) :
     f ⁻¹' (s ∩ t) = f ⁻¹' s ∩ f ⁻¹' t := by
   ext x; simp
@@ -207,21 +125,21 @@ example {β : Type*} {f : α → β} (hf : Function.Injective f) (s t : Set α) 
   · rintro ⟨x, ⟨hxs, hxt⟩, rfl⟩
     exact ⟨⟨x, hxs, rfl⟩, ⟨x, hxt, rfl⟩⟩
   · rintro ⟨⟨x, hxs, rfl⟩, ⟨x', hxt, hxx'⟩⟩
-    have : x = x' := hf hxx'.symm
+    have : x = x' := hf (Eq.symm hxx')
     subst this
     exact ⟨x, ⟨hxs, hxt⟩, rfl⟩
 
-/- # Structures algébriques -/
+/- # Algebraic structures -/
 
-/- ## Groupes -/
+/- ## Groups -/
 
--- Noyau trivial si injectif
+-- Trivial kernel if injective
 example {G H : Type*} [Group G] [Group H] (f : G →* H)
     (hf : Function.Injective f) (a : G) (h : f a = 1) : a = 1 := by
   apply hf
-  rw [h, f.map_one]
+  rw [h, map_one f]
 
--- (ab)^n = a^n * b^n dans un monoïde commutatif
+-- (ab)^n = a^n * b^n in a commutative monoid
 example {M : Type*} [CommMonoid M] (a b : M) (n : ℕ) :
     (a * b) ^ n = a ^ n * b ^ n := by
   induction n with
@@ -230,100 +148,76 @@ example {M : Type*} [CommMonoid M] (a b : M) (n : ℕ) :
     rw [pow_succ (a * b), ih, pow_succ a, pow_succ b]
     exact mul_mul_mul_comm (a ^ n) (b ^ n) a b
 
--- Groupe d'exposant 2 ⟹ commutatif
+-- Exponent-2 group ⟹ commutative
 example {G : Type*} [Group G] (h : ∀ a : G, a ^ 2 = 1) (a b : G) : a * b = b * a := by
   have hself : ∀ x : G, x⁻¹ = x := by
     intro x
     have hx : x * x = 1 := by have := h x; rwa [pow_two] at this
-    exact (eq_inv_of_mul_eq_one_left hx).symm
-  calc a * b = (a * b)⁻¹ := (hself (a * b)).symm
+    exact Eq.symm (eq_inv_of_mul_eq_one_left hx)
+  calc a * b = (a * b)⁻¹ := Eq.symm (hself (a * b))
     _ = b⁻¹ * a⁻¹ := mul_inv_rev a b
     _ = b * a := by rw [hself a, hself b]
 
--- La préimage d'un sous-groupe préserve l'inclusion
+-- The preimage of a subgroup preserves inclusion
 example {G H : Type*} [Group G] [Group H] (φ : G →* H) (S T : Subgroup H)
     (hST : S ≤ T) : S.comap φ ≤ T.comap φ := by
   intro x hx
   rw [Subgroup.mem_comap] at hx ⊢
   exact hST hx
 
--- Sous-groupe conjugué xHx⁻¹
-def conjugate {G : Type*} [Group G] (x : G) (H : Subgroup G) : Subgroup G where
-  carrier := {a : G | ∃ h, h ∈ H ∧ a = x * h * x⁻¹}
-  one_mem' := ⟨1, H.one_mem, by group⟩
-  inv_mem' := by
-    rintro a ⟨h, hh, rfl⟩
-    exact ⟨h⁻¹, H.inv_mem hh, by group⟩
-  mul_mem' := by
-    rintro a b ⟨h₁, hh₁, rfl⟩ ⟨h₂, hh₂, rfl⟩
-    exact ⟨h₁ * h₂, H.mul_mem hh₁ hh₂, by group⟩
+/- ## Rings and fields -/
 
-/- ## Anneaux et corps -/
-
--- Factorisation de a³ - b³
+-- Factorization of a³ - b³
 example {R : Type*} [CommRing R] (a b : R) :
     a ^ 3 - b ^ 3 = (a - b) * (a ^ 2 + a * b + b ^ 2) := by ring
 
--- Les unités de ℤ sont exactement ±1
-example (x : ℤˣ) : x = 1 ∨ x = -1 := by
-  have hdvd : (↑x : ℤ) ∣ 1 := ⟨↑x⁻¹, by exact_mod_cast (Units.mul_inv x).symm⟩
-  rcases Int.isUnit_iff.mp (isUnit_of_dvd_one hdvd) with h | h
-  · exact Or.inl (Units.ext h)
-  · exact Or.inr (Units.ext h)
-
--- f préserve les unités
-example {R S : Type*} [Ring R] [Ring S] (f : R →+* S) (a : R) (h : IsUnit a) :
-    IsUnit (f a) := by
-  obtain ⟨u, rfl⟩ := h
-  exact ⟨Units.map f.toMonoidHom u, rfl⟩
-
--- (a⁻¹)⁻¹ = a pour a ≠ 0
+-- (a⁻¹)⁻¹ = a for a ≠ 0
 example {K : Type*} [Field K] (a : K) (ha : a ≠ 0) : (a⁻¹)⁻¹ = a := by
   apply mul_left_cancel₀ (inv_ne_zero ha)
   rw [mul_inv_cancel₀ (inv_ne_zero ha), inv_mul_cancel₀ ha]
 
--- Dans ℤ/7ℤ : 3⁻¹ = 5
-example : (3 : ZMod 7)⁻¹ = 5 := by decide
-
--- Simplification dans un corps
+-- Cancellation in a field
 example {K : Type*} [Field K] (a b c : K) (ha : a ≠ 0) (h : a * b = a * c) : b = c := by
   have key : a⁻¹ * (a * b) = a⁻¹ * (a * c) := congr_arg (a⁻¹ * ·) h
   rwa [← mul_assoc, ← mul_assoc, inv_mul_cancel₀ ha, one_mul, one_mul] at key
 
-/- # Analyse et topologie -/
+-- The units of ℤ are exactly ±1 (a bit harder)
+example (x : ℤˣ) : (x : ℤ) = 1 ∨ (x : ℤ) = -1 := by
+  -- ↑x divides 1 (witness ↑x⁻¹), so ↑x is a unit of ℤ, hence ↑x = ±1
+  have hdvd : (↑x : ℤ) ∣ 1 := ⟨↑x⁻¹, Eq.symm (Units.mul_inv x)⟩
+  exact Int.isUnit_iff.mp (isUnit_of_dvd_one hdvd)
 
-/- ## Continuité -/
+/- # Analysis and topology -/
 
-example : Continuous (fun x : ℝ => Real.cos x + x ^ 2) := by fun_prop
+/- ## Continuity -/
+
+example : Continuous (fun x : ℝ ↦ Real.cos x + x ^ 2) := by fun_prop
 
 example {f g : ℝ → ℝ} (hf : Continuous f) (hg : Continuous g) :
-    Continuous (fun x => f x * g x) :=
-  hf.mul hg
+    Continuous (fun x ↦ f x * g x) :=
+  Continuous.mul hf hg
 
-/- ## Dérivées -/
+/- ## Derivatives -/
 
-example : Differentiable ℝ (fun x : ℝ => x ^ 3) := by fun_prop
+example : Differentiable ℝ (fun x : ℝ ↦ x ^ 3) := by fun_prop
 
-example : deriv (fun x : ℝ => x ^ 2) = fun x => 2 * x := by
+example : deriv (fun x : ℝ ↦ x ^ 2) = fun x ↦ 2 * x := by
   ext x; simp [mul_comm]
 
-/- ## Topologie -/
+/- ## Topology -/
 
 example {f : ℝ → ℝ} (hf : Continuous f) {s : Set ℝ} (hs : IsClosed s) :
     IsClosed (f ⁻¹' s) :=
-  hs.preimage hf
+  IsClosed.preimage hf hs
 
 example {f : ℝ → ℝ} (hf : Continuous f) {s : Set ℝ} (hs : IsCompact s) :
     IsCompact (f '' s) :=
-  hs.image hf
+  IsCompact.image hs hf
 
-/- # Chercher dans Mathlib -/
+/- # Searching Mathlib -/
 
 example (a b c : ℤ) (h1 : a ∣ b) (h2 : b ∣ c) : a ∣ c :=
-  h1.trans h2
-
-example (m n : ℤ) (hm : 2 ∣ m) (hn : 2 ∣ n) : 2 ∣ m + n :=
-  dvd_add hm hn
+  dvd_trans h1 h2
 
 example (a b : ℕ) : Nat.gcd a b * Nat.lcm a b = a * b :=
   Nat.gcd_mul_lcm a b
@@ -334,9 +228,9 @@ example : Irrational Real.pi :=
 example : FermatLastTheoremFor 3 :=
   fermatLastTheoremThree
 
-/- # Deux preuves plus ambitieuses -/
+/- # Two more ambitious proofs -/
 
-/- ## Construction de ℤ à partir de ℕ × ℕ -/
+/- ## Construction of ℤ from ℕ × ℕ -/
 
 def rZ : ℕ × ℕ → ℕ × ℕ → Prop := fun (a, b) (c, d) ↦ a + d = c + b
 
@@ -408,7 +302,7 @@ end ZZ
 
 #check Int.cast
 
-/- ## Théorème de Schröder-Bernstein -/
+/- ## Schröder-Bernstein theorem -/
 
 section SchroederBernstein
 
@@ -440,20 +334,20 @@ private theorem sb_injective (hf : Injective f) : Injective (sbFun f g) := by
   simp only [h_def, sbFun, ← A_def] at hxeq
   by_cases xA : x₁ ∈ A ∨ x₂ ∈ A
   · wlog x₁A : x₁ ∈ A generalizing x₁ x₂ hxeq xA
-    · symm; apply this hxeq.symm xA.symm (xA.resolve_left x₁A)
+    · symm; apply this (Eq.symm hxeq) (Or.symm xA) (Or.resolve_left xA x₁A)
     have x₂A : x₂ ∈ A := by
-      apply _root_.not_imp_self.mp
+      apply Iff.mp _root_.not_imp_self
       intro (x₂nA : x₂ ∉ A)
       rw [if_pos x₁A, if_neg x₂nA] at hxeq
       rw [A_def, sbSet, mem_iUnion] at x₁A
       have x₂eq : x₂ = g (f x₁) := by rw [hxeq, sb_right_inv f g x₂nA]
       rcases x₁A with ⟨n, hn⟩
       rw [A_def, sbSet, mem_iUnion]; use n + 1
-      simp [sbAux]; exact ⟨x₁, hn, x₂eq.symm⟩
+      simp [sbAux]; exact ⟨x₁, hn, Eq.symm x₂eq⟩
     rw [if_pos x₁A, if_pos x₂A] at hxeq; exact hf hxeq
   push Not at xA
-  rw [if_neg xA.1, if_neg xA.2] at hxeq
-  rw [← sb_right_inv f g xA.1, hxeq, sb_right_inv f g xA.2]
+  rw [if_neg (And.left xA), if_neg (And.right xA)] at hxeq
+  rw [← sb_right_inv f g (And.left xA), hxeq, sb_right_inv f g (And.right xA)]
 
 private theorem sb_surjective (hg : Injective g) : Surjective (sbFun f g) := by
   set A := sbSet f g with A_def
