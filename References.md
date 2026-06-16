@@ -10,17 +10,44 @@
 4. Wait for it to fully load (~5 minutes the first time)
 5. Check: open `Exercises.lean`, place the cursor on `#check Nat.add_comm` → a tooltip should appear
 
-**Local installation**: https://lean-lang.org/install
+> **Be patient while Lean loads.** When you open a file, Lean processes it in the
+> background; orange/yellow bars in the left margin (and a spinner in the status bar)
+> mean it is still working. Wait until they disappear before expecting goals or
+> tooltips — nothing is broken, Lean is just getting ready.
+
+**Local installation** (alternative to Codespaces):
+
+1. Install Lean (the `elan` toolchain manager and VS Code extension):
+   https://lean-lang.org/install
+2. In the terminal, clone this repository and enter it:
+   ```
+   git clone https://github.com/xroblot/AIPF2026.git
+   cd AIPF2026
+   ```
+3. Download the prebuilt Mathlib cache (otherwise compiling Mathlib takes hours):
+   ```
+   lake exe cache get
+   ```
+4. Open the folder in VS Code and open `Exercises.lean`. The first load takes a few
+   minutes while Lean starts up.
 
 **Fallback** (no installation): https://live.lean-lang.org
 
-## During the tutorial — updating the files
+## At the start of the tutorial — updating the files
 
-If the files have been updated since you opened your Codespace,
-type the following command in the terminal (already open by default at the bottom of the screen):
+To be safe, always run the following command **at the very beginning of the session**
+(and again later if the files are updated): it fetches the latest version of the files.
+Type it in the terminal (usually opened by default at the bottom of the screen):
 ```
 git pull
 ```
+
+If the terminal is not visible, open one via the menu **Terminal → New Terminal**,
+or with a keyboard shortcut:
+- toggle the bottom panel (which contains the terminal): **Cmd + J** on macOS,
+  **Ctrl + J** on Windows/Linux;
+- or toggle the terminal directly: **Ctrl + backtick** (the backtick key is usually
+  at the top-left of the keyboard, just below Esc) — same on all platforms.
 
 ## Official sites
 
@@ -33,7 +60,6 @@ git pull
 
 - **Mathematics in Lean** (reference book): https://leanprover-community.github.io/mathematics_in_lean/
 - **Natural Number Game** (interactive game): https://adam.math.hhu.de/#/g/leanprover-community/NNG4
-- **Lean Live** (online editor): https://live.lean-lang.org/
 
 ## Community
 
