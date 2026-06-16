@@ -24,6 +24,11 @@ example : P → Q → P := by
   intro hP _
   exact hP
 
+-- Modus ponens
+example : P → (P → Q) → Q := by
+  intro hP h
+  exact h hP
+
 example : (P → Q) → (Q → R) → P → R := by
   intro h1 h2 hP
   exact h2 (h1 hP)
@@ -37,6 +42,12 @@ example : P → ¬¬P := by
 example : (P → Q) → ¬Q → ¬P := by
   intro h hnQ hP
   exact hnQ (h hP)
+
+-- The converse of the contrapositive (classical: use `by_contra`)
+example : (¬Q → ¬P) → P → Q := by
+  intro h hP
+  by_contra hQ
+  exact h hQ hP
 
 /- ## Conjunction and disjunction -/
 
@@ -62,7 +73,23 @@ example : ¬(P ∨ Q) ↔ ¬P ∧ ¬Q := by
     · exact hnP hP
     · exact hnQ hQ
 
+-- The other De Morgan law (the → direction requires excluded middle: try `by_cases`)
+example : ¬(P ∧ Q) ↔ ¬P ∨ ¬Q := by
+  constructor
+  · intro h
+    by_cases hP : P
+    · right; intro hQ; exact h ⟨hP, hQ⟩
+    · left; exact hP
+  · rintro (hnP | hnQ) ⟨hP, hQ⟩
+    · exact hnP hP
+    · exact hnQ hQ
+
 /- ## Equivalence -/
+
+-- Transitivity of ↔
+example : (P ↔ Q) → (Q ↔ R) → (P ↔ R) := by
+  intro h1 h2
+  exact Iff.trans h1 h2
 
 example : ¬(P ↔ ¬P) := by
   intro h
@@ -72,6 +99,10 @@ example : ¬(P ↔ ¬P) := by
 /- # Quantifiers -/
 
 variable (α : Type*) (f g : α → Prop)
+
+example : (∀ x, f x ∧ g x) → ∀ x, f x := by
+  intro h x
+  exact And.left (h x)
 
 example : (∀ x, f x ∧ g x) ↔ (∀ x, f x) ∧ (∀ x, g x) := by
   constructor
@@ -93,6 +124,10 @@ example (h : ¬ ∀ x, f x) : ∃ x, ¬ f x := by
   exact h h'
 
 /- # Sets and functions -/
+
+example (s t : Set α) : s ⊆ s ∪ t := by
+  intro x hx
+  exact Or.inl hx
 
 example (s t : Set α) : s ∩ t = t ∩ s := by
   ext x
@@ -199,7 +234,9 @@ example {f g : ℝ → ℝ} (hf : Continuous f) (hg : Continuous g) :
 
 /- ## Derivatives -/
 
-example : Differentiable ℝ (fun x : ℝ ↦ x ^ 3) := by fun_prop
+-- A sum of differentiable functions is differentiable (`fun_prop` also works)
+example : Differentiable ℝ (fun x : ℝ ↦ x ^ 3 + x) :=
+  Differentiable.add (differentiable_pow 3) differentiable_id
 
 example : deriv (fun x : ℝ ↦ x ^ 2) = fun x ↦ 2 * x := by
   ext x; simp [mul_comm]
@@ -213,6 +250,17 @@ example {f : ℝ → ℝ} (hf : Continuous f) {s : Set ℝ} (hs : IsClosed s) :
 example {f : ℝ → ℝ} (hf : Continuous f) {s : Set ℝ} (hs : IsCompact s) :
     IsCompact (f '' s) :=
   IsCompact.image hs hf
+
+-- Bolzano: a continuous function that changes sign on [0, 1] has a zero there
+example (f : ℝ → ℝ) (hf : Continuous f) (h0 : f 0 < 0) (h1 : 0 < f 1) :
+    ∃ x ∈ Set.Icc (0 : ℝ) 1, f x = 0 := by
+  -- the IVT: the interval [f 0, f 1] is contained in the image of [0, 1]
+  have hsub := intermediate_value_Icc (by norm_num : (0 : ℝ) ≤ 1) (Continuous.continuousOn hf)
+  -- 0 lies in [f 0, f 1] since f 0 < 0 < f 1
+  have h0mem : (0 : ℝ) ∈ Set.Icc (f 0) (f 1) := Set.mem_Icc.mpr ⟨le_of_lt h0, le_of_lt h1⟩
+  -- so 0 is in the image: extract a preimage point
+  obtain ⟨x, hx, hfx⟩ := hsub h0mem
+  exact ⟨x, hx, hfx⟩
 
 /- # Searching Mathlib -/
 

@@ -68,6 +68,20 @@ noncomputable section
 -/
 
 /-
+  ## How to work on this file
+
+  - **The Infoview** (panel on the right) shows the proof state at the cursor: the
+    hypotheses, then the goal to prove below the `⊢` symbol. If you don't see it, open it
+    from the command palette (Ctrl/Cmd + Shift + P) → "Lean 4: Toggle Infoview".
+  - Each exercise is an `example` (or `theorem`) whose proof is `sorry`. **Replace `sorry`**
+    with your own proof, one tactic at a time, watching the goal change in the Infoview.
+  - The proof is complete when the Infoview shows **"No goals"** and the yellow warning on
+    `sorry` is gone. A red underline means an error — hover over it to read the message.
+  - In a proof, a bullet `·` focuses on a single subgoal (e.g. after `constructor`).
+  - **Hover** over any name (lemma, definition, tactic) to see its type and documentation.
+-/
+
+/-
   # Propositions and proofs
 
   Propositions live in the type `Prop`.
@@ -114,6 +128,10 @@ example : False → P := by
 example : P → Q → P := by
   sorry
 
+-- Modus ponens
+example : P → (P → Q) → Q := by
+  sorry
+
 example : (P → Q) → (Q → R) → P → R := by
   sorry
 
@@ -152,6 +170,10 @@ example : P → ¬¬P := by
   sorry
 
 example : (P → Q) → ¬Q → ¬P := by
+  sorry
+
+-- The converse of the contrapositive (classical: use `by_contra`)
+example : (¬Q → ¬P) → P → Q := by
   sorry
 
 /- END TODO -/
@@ -197,6 +219,10 @@ example : P ∨ Q ↔ Q ∨ P := by
 example : ¬(P ∨ Q) ↔ ¬P ∧ ¬Q := by
   sorry
 
+-- The other De Morgan law (the → direction requires excluded middle: try `by_cases`)
+example : ¬(P ∧ Q) ↔ ¬P ∨ ¬Q := by
+  sorry
+
 /- END TODO -/
 
 /-
@@ -211,6 +237,10 @@ example : (P ↔ Q) → (Q ↔ P) := by
   exact ⟨hqp, hpq⟩
 
 /- TODO -/
+
+-- Transitivity of ↔
+example : (P ↔ Q) → (Q ↔ R) → (P ↔ R) := by
+  sorry
 
 example : ¬(P ↔ ¬P) := by
   sorry
@@ -240,6 +270,9 @@ example (h : ∀ x, f x → g x) (h' : ∃ x, f x) : ∃ x, g x := by
 
 /- TODO -/
 
+example : (∀ x, f x ∧ g x) → ∀ x, f x := by
+  sorry
+
 example : (∀ x, f x ∧ g x) ↔ (∀ x, f x) ∧ (∀ x, g x) := by
   sorry
 
@@ -247,6 +280,8 @@ example : (∃ x, f x ∨ g x) ↔ (∃ x, f x) ∨ (∃ x, g x) := by
   sorry
 
 -- Negation of quantifiers
+-- Hint: `by_contra h'`, then `push Not at h'` — the `push Not` tactic pushes negations
+--   inward (`¬ ∀` becomes `∃ ¬`, `¬ ∃` becomes `∀ ¬`, etc.)
 example (h : ¬ ∀ x, f x) : ∃ x, ¬ f x := by
   sorry
 
@@ -308,6 +343,10 @@ example {β : Type*} (f : α → β) (s t : Set α) :
   exact ⟨⟨x, hxs, rfl⟩, ⟨x, hxt, rfl⟩⟩
 
 /- TODO -/
+
+-- s ⊆ s ∪ t
+example (s t : Set α) : s ⊆ s ∪ t := by
+  sorry
 
 -- s ∩ t = t ∩ s
 -- Hint: `ext x`, then `constructor` and `rintro ⟨h1, h2⟩`
@@ -569,8 +608,10 @@ example : Differentiable ℝ (fun x : ℝ ↦ Real.cos (Real.sin x) * Real.exp x
 
 /- TODO -/
 
--- x ↦ x ^ 3 is differentiable
-example : Differentiable ℝ (fun x : ℝ ↦ x ^ 3) := by
+-- x ↦ x ^ 3 + x is differentiable
+-- Hint: a sum of differentiable functions is differentiable (`Differentiable.add`).
+-- Of course, `fun_prop` handles all of this on its own.
+example : Differentiable ℝ (fun x : ℝ ↦ x ^ 3 + x) := by
   sorry
 
 -- The derivative of x ↦ x ^ 2 is x ↦ 2 * x
@@ -611,6 +652,15 @@ example {f : ℝ → ℝ} (hf : Continuous f) {s : Set ℝ} (hs : IsCompact s) :
     IsCompact (f '' s) := by
   sorry
 
+-- Bolzano: a continuous function that changes sign on [0, 1] has a zero there.
+-- (a longer proof, in several steps)
+-- Hint: the intermediate value theorem (cf. the `#check` above) gives an inclusion of
+--   the form `Set.Icc (f 0) (f 1) ⊆ f '' Set.Icc 0 1`; show that `0` belongs to the
+--   left-hand interval, then read off a point of `Set.Icc 0 1` from the image.
+example (f : ℝ → ℝ) (hf : Continuous f) (h0 : f 0 < 0) (h1 : 0 < f 1) :
+    ∃ x ∈ Set.Icc (0 : ℝ) 1, f x = 0 := by
+  sorry
+
 /- END TODO -/
 
 -- Extreme value theorem: a continuous function on a nonempty compact attains its minimum
@@ -627,13 +677,25 @@ example {f : ℝ → ℝ} (hf : Continuous f) {s : Set ℝ} (hs : IsCompact s) :
 
   Mathlib contains thousands of lemmas. Here are the tools to find them.
 
-  ## Interactive tools (in the editor)
+  ## Interactive tactics (in a proof)
 
   `exact?`  — looks for a lemma that proves the current goal exactly
   `apply?`  — looks for a lemma whose conclusion matches the goal
   `simp?`   — finds the simp lemmas that close or simplify the goal
 
-  ## Search engines
+  ## In-editor search commands (no browser needed)
+
+  Mathlib ships two commands that query the search engines directly from the editor
+  and show clickable results in the Infoview:
+
+  * `#loogle <pattern>` — Loogle search, by type pattern or by constant names:
+      `#loogle ?a ∣ ?b → ?a ∣ ?b * ?c`     (type pattern)
+      `#loogle Nat.gcd, Nat.lcm`           (by names)
+  * `#leansearch "..."` — natural-language search; the query must end with `.` or `?`.
+
+  Both also work inside a `by` block, where the results offer ready-made `exact …`/`apply …`.
+
+  ## Search engines (in the browser)
 
   * **Mathlib docs**: https://leanprover-community.github.io/mathlib4_docs
     Search by name, type, module.
@@ -644,6 +706,14 @@ example {f : ℝ → ℝ} (hf : Continuous f) {s : Set ℝ} (hs : IsCompact s) :
   * **LeanSearch**: https://leansearch.net
     Natural language search. Example: "prime divides product"
 -/
+
+-- The commands below query Loogle / LeanSearch directly from the editor.
+-- They are commented out because each one makes a network call; **remove the `--`**
+-- in front of a line to run it and see the (clickable) results in the Infoview.
+
+-- #loogle ?a ∣ ?b → ?a ∣ ?b * ?c
+-- #loogle Nat.gcd, Nat.lcm
+-- #leansearch "if a prime divides a product then it divides one of the factors?"
 
 -- Exercise: find and use the right lemma in each case.
 -- Unlike the rest of the tutorial — where hints never give the final lemma —
