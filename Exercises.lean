@@ -24,10 +24,10 @@ noncomputable section
   Lean is a proof assistant: it checks that your proofs are correct.
 -/
 
--- Lean checks types in real time
+-- `#check` displays the type of an expression (Lean checks types in real time)
 #check Nat.add_comm   -- ∀ (n m : ℕ), n + m = m + n
 
--- Lean can also compute
+-- `#eval` evaluates an expression
 #eval 2 ^ 10          -- 1024
 
 /-
@@ -93,7 +93,10 @@ variable (P Q R : Prop)
 /-
   ## Implication
 
-  Tactics: `intro`, `exact`, `apply`
+  A proof in *tactic mode* is written after `by`. The basic tactics here:
+  - `intro h` : to prove a goal `P → Q`, assume `P` (call it `h`) and prove `Q`;
+  - `exact h` : close the goal with a term `h` whose type is exactly the goal;
+  - `apply h` : from `h : P → Q`, reduce the goal `Q` to the goal `P`.
 -/
 
 example : P → P := by
@@ -294,8 +297,9 @@ example (h : ¬ ∀ x, f x) : ∃ x, ¬ f x := by
   `f '' s`   = image of `s` under `f`     = { f x | x ∈ s }
   `f ⁻¹' t`  = preimage of `t` under `f`  = { x | f x ∈ t }
 
-  Useful tactics: `ext`, `rintro`
-
+  Useful tactics: `ext` (extensionality: reduce an equality of sets/functions to a
+  pointwise statement), and `rintro` (a version of `intro` that also destructures
+  patterns on the fly, like `⟨a, b⟩` for `∧`/`∃` or `h | h` for `∨`).
 -/
 
 -- Proving `s ⊆ t`: introduce an element with `intro x hx`
@@ -400,6 +404,7 @@ example {β : Type*} {f : α → β} (hf : Function.Injective f) (s t : Set α) 
   This is why we use `Fact P`: it is a type class with a single field `out : P`,
   which lets us register a proposition in the instance database.
 -/
+-- (`norm_num` proves goals about concrete numbers, here `Nat.Prime 5`)
 example : Field (ZMod 5) := by
   have : Fact (Nat.Prime 5) := ⟨by norm_num⟩
   exact inferInstance
@@ -421,6 +426,8 @@ example {G H : Type*} [Group G] [Group H] (f : G →* H) : f 1 = 1 :=
 #check eq_inv_of_mul_eq_one_left
 
 -- f(a⁻¹) = f(a)⁻¹
+-- `rw [h]` rewrites the goal using an equality `h` (left-to-right); `rw [← h]` rewrites
+--   right-to-left. A list `rw [h1, h2, ...]` applies the rewrites in order.
 -- Idea: show f(a) * f(a⁻¹) = 1, then conclude with `eq_inv_of_mul_eq_one_left`
 example {G H : Type*} [Group G] [Group H] (f : G →* H) (a : G) :
     f a⁻¹ = (f a)⁻¹ := by
@@ -516,6 +523,7 @@ example {K : Type*} [Field K] (a b c : K) (ha : a ≠ 0) (h : a * b = a * c) : b
   sorry
 
 -- The units of ℤ are exactly ±1 (a bit harder)
+-- Note: `↑x` (type `\u`) is the integer value of the unit `x` — the coercion ℤˣ → ℤ.
 -- Approach: ↑x ∣ 1 (witness ↑x⁻¹), so ↑x is a unit of ℤ, hence ↑x = ±1
 #check @Units.mul_inv     -- ↑x * ↑x⁻¹ = 1 in ℤˣ
 #check isUnit_of_dvd_one  -- a ∣ 1 → IsUnit a
