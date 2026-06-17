@@ -135,23 +135,9 @@ example (s t : Set α) : s ∩ t = t ∩ s := by
   · rintro ⟨hs, ht⟩; exact ⟨ht, hs⟩
   · rintro ⟨ht, hs⟩; exact ⟨hs, ht⟩
 
-example (s t u : Set α) : s ∩ (t ∪ u) = (s ∩ t) ∪ (s ∩ u) := by
-  ext x
-  constructor
-  · rintro ⟨hs, ht | hu⟩
-    · exact Or.inl ⟨hs, ht⟩
-    · exact Or.inr ⟨hs, hu⟩
-  · rintro (⟨hs, ht⟩ | ⟨hs, hu⟩)
-    · exact ⟨hs, Or.inl ht⟩
-    · exact ⟨hs, Or.inr hu⟩
-
 example {β : Type*} (f : α → β) (s t : Set β) :
     f ⁻¹' (s ∩ t) = f ⁻¹' s ∩ f ⁻¹' t := by
   ext x; simp
-
-example {β : Type*} (f : α → β) (t : Set β) : f ⁻¹' tᶜ = (f ⁻¹' t)ᶜ := by
-  ext x
-  simp [Set.mem_preimage, Set.mem_compl_iff]
 
 example {β : Type*} {f : α → β} (hf : Function.Injective f) (s t : Set α) :
     f '' (s ∩ t) = f '' s ∩ f '' t := by
